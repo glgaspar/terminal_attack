@@ -5,7 +5,7 @@ void take_damage(int damage_amount, struct Character *character) {
 }
 
 struct Bullet *shoot(struct Character *character) {
-    return bullet_constructor(character->movable->y_axis++, character->movable->x_axis, character->bullet_speed, character->damage_amount);
+    return bullet_constructor(character->movable->y_axis, character->movable->x_axis, character->bullet_speed, character->damage_amount);
 }
 
 void object_move(int speed, char axis, struct Movable *movable) {
