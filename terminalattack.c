@@ -33,7 +33,7 @@ struct Bullet *bullet_constructor(int y_axis, int x_axis, int move_speed, int da
 
     struct Movable *movable;
     movable = movable_constructor(y_axis, x_axis, move_speed);
-    bullet->movable = &movable;
+    bullet->movable = movable;
     
 
     return bullet;
@@ -50,7 +50,7 @@ struct Character *character_constructor(int y_axis, int x_axis, int health_point
 
     struct Movable *movable;
     movable = movable_constructor(y_axis, x_axis, move_speed);
-    character->movable = &movable;
+    character->movable = movable;
     
 
     return character;
