@@ -8,7 +8,7 @@ struct Bullet *shoot(struct Character *character) {
     return bullet_constructor(character->movable->y_axis++, character->movable->x_axis, character->bullet_speed, character->damage_amount);
 }
 
-void move(int speed, char axis, struct Movable *movable) {
+void object_move(int speed, char axis, struct Movable *movable) {
     if (axis == 'x') {
         movable->x_axis += speed;
     } else {
@@ -21,7 +21,7 @@ struct Movable *movable_constructor(int y_axis, int x_axis, int move_speed) {
     movable->y_axis = y_axis;
     movable->x_axis = x_axis;
     movable->move_speed = move_speed;
-    movable->move = &move;
+    movable->object_move = &object_move;
 
     return movable;
 };

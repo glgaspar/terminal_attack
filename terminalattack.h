@@ -40,7 +40,7 @@ struct Movable {
     int x_axis;
     int move_speed;
 
-    void (*move)(int speed, char axis, struct Movable *movable);
+    void (*object_move)(int speed, char axis, struct Movable *movable);
 };
 
 
@@ -51,6 +51,6 @@ struct Movable *movable_constructor(int y_axis, int x_axis, int move_speed);
 void take_damage(int damage_amount, struct Character *character);
 struct Bullet *shoot(struct Character *character);
 
-void move(int speed, char axis, struct Movable *movable);
+void object_move(int speed, char axis, struct Movable *movable);
 
 #endif
