@@ -1,0 +1,56 @@
+#ifndef TERMINAL_ATTACK_H
+
+#define TERMINAL_ATTACK_H
+#define MAX_ENEMY_AMOUNT 5
+#define ENEMY_SPAWN_INTERVAL 5
+#define ENEMY_HEALTH_POINTS 50
+#define ENEMY_MOVE_SPEED 1
+#define ENEMY_DAMAGE_AMOUNT 5
+#define ENEMY_BULLET_SPEED 1
+#define ENEMY_SPAWN_Y_AXIS 10
+#define ENEMY_SPAWN_X_AXIS 10
+
+#define PLAYER_HEALTH_POINTS 100
+#define PLAYER_MOVE_SPEED 1
+#define PLAYER_DAMAGE_AMOUNT 10
+#define PLAYER_BULLET_SPEED 2
+
+#define MAX_BULLET_AMOUNT 100
+
+#define MAX_GRID_X 300
+#define MAX_GRID_Y 300
+
+struct Bullet {
+    struct Movable *movable;
+    int damage_amount;
+};
+
+struct Character {
+    struct Movable *movable;
+    int health_points;
+    int damage_amount;
+    int bullet_speed;
+
+    void (*take_damage)(int damage_amount, struct Character *character);
+    struct Bullet *(*shoot)(struct Character *character);
+};
+
+struct Movable {
+    int y_axis;
+    int x_axis;
+    int move_speed;
+
+    void (*move)(int speed, char axis, struct Movable *movable);
+};
+
+
+struct Bullet *bullet_constructor(int y_axis, int x_axis, int move_speed, int damage_amount);
+struct Character *character_constructor(int y_axis, int x_axis, int health_points, int move_speed, int damage_amount, int bullet_speed);
+struct Movable *movable_constructor(int y_axis, int x_axis, int move_speed);
+
+void take_damage(int damage_amount, struct Character *character);
+struct Bullet *shoot(struct Character *character);
+
+void move(int speed, char axis, struct Movable *movable);
+
+#endif
