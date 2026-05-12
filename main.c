@@ -100,15 +100,35 @@ void add_bullet(struct Bullet *bullet, struct Bullet **bullet_list) {
 void player_actions(int key, struct Character *player, struct Bullet **bullet_list) {
     switch (key) {
         case KEY_UP:
+        case 'w':
+        case 'W':
+            if (player->movable->y_axis <= 0) {
+                break;
+            }
             player->movable->object_move(-player->movable->move_speed, 'y', player->movable);
             break;
         case KEY_DOWN:
+        case 's':
+        case 'S':
+            if (player->movable->y_axis >= MAX_GRID_Y) {
+                break;
+            }
             player->movable->object_move(player->movable->move_speed, 'y', player->movable);
             break;
         case KEY_LEFT:
+        case 'a':
+        case 'A':
+            if (player->movable->x_axis <= 0) {
+                break;
+            }
             player->movable->object_move(-player->movable->move_speed, 'x', player->movable);
             break;
         case KEY_RIGHT:
+        case 'd':
+        case 'D':
+            if (player->movable->x_axis >= MAX_GRID_X) {
+                break;
+            }
             player->movable->object_move(player->movable->move_speed, 'x', player->movable);
             break;
         case ' ':
@@ -123,7 +143,10 @@ void player_actions(int key, struct Character *player, struct Bullet **bullet_li
     }
 }
 
-void update_enemies(struct Character **enemy_list) {
+void update_enemies(struct Character **enemy_list, struct Bullet **enemy_bullet_list) {
+    time_t current_time; 
+    time(&current_time);
+
     for (int i = 0; i < MAX_ENEMY_AMOUNT; i++) {
         if (enemy_list[i] == NULL) {
             continue;
@@ -132,21 +155,32 @@ void update_enemies(struct Character **enemy_list) {
             remove_enemy(enemy_list[i], enemy_list);
             continue;
         }
-        if (enemy_list[i]->movable->x_axis >= MAX_GRID_X || enemy_list[i]->movable->x_axis <= 0) {
-            enemy_list[i]->movable->move_speed = -enemy_list[i]->movable->move_speed;
+
+        if (difftime(current_time, enemy_list[i]->last_shoot_time) >= enemy_list[i]->shoot_cooldown){
+            struct Bullet *bullet = enemy_list[i]->shoot(enemy_list[i]);
+            add_bullet(bullet, enemy_bullet_list);
+            enemy_list[i]->last_shoot_time = current_time;
         }
-        enemy_list[i]->movable->object_move(enemy_list[i]->movable->move_speed, 'x', enemy_list[i]->movable);
+
+        if (difftime(current_time, enemy_list[i]->last_move_time) >= enemy_list[i]->move_cooldown) {
+            if (enemy_list[i]->movable->x_axis >= MAX_GRID_X || enemy_list[i]->movable->x_axis <= 0) {
+                enemy_list[i]->movable->move_speed = -enemy_list[i]->movable->move_speed;
+            }
+            enemy_list[i]->movable->object_move(enemy_list[i]->movable->move_speed, 'x', enemy_list[i]->movable);
+            enemy_list[i]->last_move_time = current_time;
+        }
     }
+    free(current_time);
 }
 
 void draw(struct Character *player, struct Character **enemy_list, struct Bullet **enemy_bullet_list, struct Bullet **player_bullet_list) {
-    mvprintw(player->movable->y_axis, player->movable->x_axis, "P");
+    mvprintw(player->movable->y_axis, player->movable->x_axis, "/\\");
     
     for (int i = 0; i < MAX_ENEMY_AMOUNT; i++) {
         if (enemy_list[i] == NULL) {
             continue;
         }
-        mvprintw(enemy_list[i]->movable->y_axis, enemy_list[i]->movable->x_axis, "E");
+        mvprintw(enemy_list[i]->movable->y_axis, enemy_list[i]->movable->x_axis, "V");
     }
     
     for (int i = 0; i < MAX_BULLET_AMOUNT; i++) {
@@ -189,6 +223,15 @@ void show_home_screen() {
     nodelay(stdscr, TRUE);  // Restore non-blocking input for the game
 }
 
+void show_game_over_screen() {
+    clear();
+    mvprintw(MAX_GRID_Y / 2 - 1, 0, "GAME OVER");
+    mvprintw(MAX_GRID_Y / 2 + 1, 0, "Press any key to exit...");
+    refresh();
+    nodelay(stdscr, FALSE); // Temporarily make getch() blocking
+    getch();                // Wait for the user to press a key
+}
+
 int main(){
     struct Character **enemy_list = calloc(MAX_ENEMY_AMOUNT, sizeof(struct Character *));
     struct Character *player;
@@ -209,7 +252,7 @@ int main(){
     show_home_screen();
 
     time(&last_enemy_spawn);
-    player = character_constructor(PLAYER_SPAWN_Y_AXIS, PLAYER_SPAWN_X_AXIS, PLAYER_HEALTH_POINTS, PLAYER_MOVE_SPEED, PLAYER_DAMAGE_AMOUNT, PLAYER_BULLET_SPEED);
+    player = character_constructor(PLAYER_SPAWN_Y_AXIS, PLAYER_SPAWN_X_AXIS, PLAYER_HEALTH_POINTS, PLAYER_MOVE_SPEED, PLAYER_DAMAGE_AMOUNT, PLAYER_BULLET_SPEED, PLAYER_MOVE_COOLDOWN, PLAYER_SHOOT_COOLDOWN);
     
     
     while (true) {
@@ -220,31 +263,25 @@ int main(){
 
         int enemy_selector = rand() % MAX_ENEMY_AMOUNT;
         
-        if (enemy_list[enemy_selector] != NULL) {
-            struct Bullet *bullet = enemy_list[enemy_selector]->shoot(enemy_list[enemy_selector]);
-            add_bullet(bullet, enemy_bullet_list);
-        }
-
-        if (difftime(current_time, last_enemy_spawn) >= ENEMY_SPAWN_INTERVAL) {
-            struct Character *enemy = character_constructor(ENEMY_SPAWN_Y_AXIS, ENEMY_SPAWN_X_AXIS, ENEMY_HEALTH_POINTS, ENEMY_MOVE_SPEED, ENEMY_DAMAGE_AMOUNT, ENEMY_BULLET_SPEED);
-            add_enemy(enemy, enemy_list);
-            last_enemy_spawn = current_time;
-        }
-        
-
         update_player_bullets(player_bullet_list, enemy_list);
         update_enemy_bullets(enemy_bullet_list, player);
 
         if (player->health_points <= 0) {
             break;
         }
-        update_enemies(enemy_list);
 
+        update_enemies(enemy_list, enemy_bullet_list);
+
+        if (difftime(current_time, last_enemy_spawn) >= ENEMY_SPAWN_INTERVAL) {
+            struct Character *enemy = character_constructor(ENEMY_SPAWN_Y_AXIS, ENEMY_SPAWN_X_AXIS, ENEMY_HEALTH_POINTS, ENEMY_MOVE_SPEED, ENEMY_DAMAGE_AMOUNT, ENEMY_BULLET_SPEED, ENEMY_MOVE_COOLDOWN, ENEMY_SHOOT_COOLDOWN);
+            add_enemy(enemy, enemy_list);
+            last_enemy_spawn = current_time;
+        }
 
         clear();
         draw(player, enemy_list, enemy_bullet_list, player_bullet_list  );
         refresh();
-        usleep(300000);
+        usleep(30000);
     }
 
     clear();
@@ -271,7 +308,8 @@ int main(){
     }
     free(enemy_list);
 
-    endwin();
+    show_game_over_screen();
 
+    endwin();
     return 0;
 }

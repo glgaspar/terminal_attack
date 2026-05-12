@@ -40,11 +40,17 @@ struct Bullet *bullet_constructor(int y_axis, int x_axis, int move_speed, int da
 };
 
 
-struct Character *character_constructor(int y_axis, int x_axis, int health_points, int move_speed, int damage_amount, int bullet_speed) {
+struct Character *character_constructor(int y_axis, int x_axis, int health_points, int move_speed, int damage_amount, int bullet_speed, int move_cooldown, int shoot_cooldown) {
+    time_t t0;
+    time(&t0);
     struct Character *character = malloc(sizeof(struct Character));
     character->health_points = health_points;
     character->damage_amount = damage_amount;
     character->bullet_speed = bullet_speed;
+    character->move_cooldown = move_cooldown;
+    character->shoot_cooldown = shoot_cooldown;
+    character->last_move_time = t0;
+    character->last_shoot_time = t0;
     character->take_damage = &take_damage;
     character->shoot = &shoot;
 
